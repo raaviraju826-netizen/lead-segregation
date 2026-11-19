@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -78,31 +79,44 @@ async def _background_sync(seconds: int):
             log.warning("Background sync error: %s", str(e)[:200])
 
 
+_bootstrap_lock = threading.Lock()
+_bootstrapped = False
+
+
+def _ensure_bootstrapped() -> int:
+    global _bootstrapped
+    with _bootstrap_lock:
+        if _bootstrapped:
+            return kb.kb_status().get("chunks", 0)
+        setup_logging()
+        init_db()
+        seed_taxonomy()
+        n = kb.ensure_knowledge_base(reviewed_examples())
+        from .config import IS_VERCEL
+        if IS_VERCEL:
+            from sqlalchemy import func
+            from .models import Email
+            from .api import simulate_target_inbox_sync
+            from .demo.loader import load_demo
+            db = SessionLocal()
+            try:
+                if (db.scalar(select(func.count()).select_from(Email).where(Email.source == "gmail")) or 0) == 0:
+                    simulate_target_inbox_sync(db)
+                if (db.scalar(select(func.count()).select_from(Email).where(Email.source == "demo")) or 0) == 0:
+                    load_demo(db)
+            except Exception as e:
+                log.warning("Auto-seed check warning: %s", str(e)[:200])
+            finally:
+                db.close()
+        _bootstrapped = True
+        return n
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    setup_logging()
-    init_db()
-    seed_taxonomy()
-    n = kb.ensure_knowledge_base(reviewed_examples())
+    n = _ensure_bootstrapped()
     s = get_settings()
     from .config import IS_VERCEL
-    if IS_VERCEL:
-        from sqlalchemy import func
-        from .models import Email
-        from .api import simulate_target_inbox_sync
-        from .demo.loader import load_demo
-        db = SessionLocal()
-        try:
-            gmail_count = db.scalar(select(func.count()).select_from(Email).where(Email.source == "gmail")) or 0
-            if gmail_count == 0:
-                simulate_target_inbox_sync(db)
-            demo_count = db.scalar(select(func.count()).select_from(Email).where(Email.source == "demo")) or 0
-            if demo_count == 0:
-                load_demo(db)
-        except Exception as e:
-            log.warning("Auto-seed check warning: %s", str(e)[:200])
-        finally:
-            db.close()
     log.info("LeadSense AI started: %d KB chunks, LLM %s, target configured: %s", n, "ON" if s.llm_enabled else "OFF (heuristic mode)", s.target_configured)
     task = None
     if not IS_VERCEL:
@@ -117,6 +131,15 @@ app = FastAPI(title="LeadSense AI", version="1.0.0", lifespan=lifespan,
               description="Industry-wise lead segregation & trust intelligence. Gmail access is read-only.")
 app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in get_settings().cors_origins.split(",") if o.strip()],
                    allow_methods=["GET", "POST", "PATCH", "DELETE"], allow_headers=["*"])
+
+
+@app.middleware("http")
+async def _vercel_lazy_bootstrap(request: Request, call_next):
+    if not _bootstrapped:
+        _ensure_bootstrapped()
+    return await call_next(request)
+
+
 app.include_router(public)
 app.include_router(router)
 
