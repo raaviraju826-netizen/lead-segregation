@@ -117,12 +117,9 @@ def run_imap_sync(trigger: str = "manual", max_messages: int = 30) -> SyncHistor
         sync.status = "success"
     except OSError as e:
         db.rollback()
-        from sqlalchemy import func
-        stored = db.scalar(select(func.count()).select_from(Email).where(Email.source == "gmail")) or 0
-        sync.fetched = min(stored, max_messages)
-        sync.status = "success"
-        sync.error = None
-        log.warning("IMAP network reachability fallback (%s); using %d stored emails", e, stored)
+        sync.status = "failed"
+        sync.error = f"Cannot reach imap.gmail.com (network/DNS problem: {e}). Showing previously synced emails; will retry automatically."
+        log.warning("IMAP network unreachable: %s", e)
     except Exception as e:
         db.rollback()
         sync.status = "failed"
