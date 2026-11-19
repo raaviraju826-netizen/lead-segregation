@@ -1,0 +1,76 @@
+# Active industry taxonomy. Edit freely: the RAG knowledge base is re-synced from this file at startup.
+# The LLM / classifier may ONLY choose industries listed here (plus the fallback outcomes below).
+fallback_outcomes: ["Other / Unknown", "Needs Review", "Not a Lead"]
+
+industries:
+  - name: Manufacturing
+    slug: manufacturing
+    description: >
+      Companies that physically make goods: factories, plants, assembly lines and fabrication units that
+      produce vehicles, textiles, electronics, industrial machinery, chemicals and other products.
+    keywords: [manufacturing, factory, production, machinery, industrial, automotive, textile, assembly, fabrication, plant, equipment]
+    example_businesses: [auto component maker, garment and fabric mill, PCB and electronics assembler, machine tool builder, specialty chemicals producer]
+    disambiguation: >
+      A manufacturer requesting software, marketing or logistics services is still Manufacturing.
+      A company that only sells or distributes machinery without making it is not Manufacturing.
+    sub_industries:
+      Automotive Manufacturing: {keywords: [automotive, auto component, vehicle, engine, chassis, oem, car parts, two-wheeler, forging, castings]}
+      Textile Manufacturing: {keywords: [textile, garment, fabric, yarn, spinning, weaving, apparel, knitting, denim, cotton mill]}
+      Electronics Manufacturing: {keywords: [electronics, pcb, circuit board, semiconductor, ems, smt, consumer electronics, sensors, cable assembly]}
+      Industrial Machinery: {keywords: [industrial machinery, machine tools, cnc, heavy equipment, pumps, compressors, conveyor, press machines, boilers]}
+      Chemical Manufacturing: {keywords: [chemical, chemicals, polymer, resin, pigment, paint, fertilizer, solvents, specialty chemicals]}
+      Other Manufacturing: {keywords: [manufacturer, manufacturing unit, packaging, furniture, plastics, steel, fabrication]}
+
+  - name: Education
+    slug: education
+    description: >
+      Institutions and platforms whose business is teaching and learning: schools, colleges, universities,
+      coaching and training institutes, and EdTech companies delivering education.
+    keywords: [college, university, school, students, admissions, education, coaching, academic, learning, training, campus]
+    example_businesses: [engineering college, CBSE school, JEE/NEET coaching institute, online course platform, vocational training centre]
+    disambiguation: >
+      Classify by the sender's institution, not by what they ask for. A college requesting website development
+      is Education, not IT & Software. A software company that trains developers is IT & Software unless education is its core business.
+    sub_industries:
+      Schools: {keywords: [school, k-12, principal, cbse, icse, primary school, high school, headmaster, kindergarten]}
+      Colleges and Universities: {keywords: [college, university, campus, undergraduate, postgraduate, faculty, admissions, engineering college, dean, registrar, semester]}
+      Coaching Institutes: {keywords: [coaching, entrance exam, jee, neet, test prep, upsc, tutorial, batch, exam preparation]}
+      EdTech Platforms: {keywords: [edtech, online courses, e-learning, learning platform, mooc, learners, course marketplace]}
+      Training Institutes: {keywords: [training institute, vocational, skill development, certification, workshops, corporate training, training centre]}
+
+  - name: IT & Software
+    slug: it-software
+    description: >
+      Companies whose core business is building, selling or operating software and IT services: custom development,
+      SaaS products, cloud/DevOps, AI and data, cybersecurity and IT consulting.
+    keywords: [software, IT, SaaS, application development, website design, web design, web development, cloud, API, AI, data analytics, cybersecurity, programming]
+    example_businesses: [custom software house, web design agency, SaaS startup, DevOps consultancy, AI/ML analytics firm, managed security provider]
+    disambiguation: >
+      Only classify as IT & Software when the sender itself sells or builds technology, or when the enquiry is purely about software/website design without another sender industry.
+    sub_industries:
+      Custom Software Development: {keywords: [custom software, application development, website design, web design, ui/ux design, web development, mobile app development, software development company, software house, bespoke]}
+      SaaS: {keywords: [saas, subscription platform, our platform, multi-tenant, product-led, cloud software product]}
+      Cloud and DevOps: {keywords: [cloud, devops, kubernetes, aws, azure, infrastructure, ci/cd, migration, managed hosting]}
+      AI and Data: {keywords: [artificial intelligence, machine learning, data analytics, data science, ai, ml, analytics, llm, computer vision]}
+      Cybersecurity: {keywords: [cybersecurity, security operations, penetration testing, soc, vulnerability, infosec, threat detection]}
+      IT Services: {keywords: [it services, it consulting, managed services, system integration, it support, outsourcing, erp implementation]}
+
+  - name: Logistics & Transportation
+    slug: logistics
+    description: >
+      Companies that move or store goods: freight carriers, courier and parcel services, warehousing operators,
+      fleet operators and supply chain management providers.
+    keywords: [logistics, transportation, freight, courier, shipping, warehouse, delivery, fleet, distribution, supply chain]
+    example_businesses: [trucking company, courier network, 3PL warehouse operator, fleet management firm, freight forwarder]
+    disambiguation: >
+      A retailer or manufacturer that merely ships its products is not Logistics. Classify as Logistics only when moving,
+      storing or managing goods is the sender's core service.
+    sub_industries:
+      Freight Transportation: {keywords: [freight, trucking, cargo, freight forwarding, shipping line, haulage, ftl, ltl, container]}
+      Courier Services: {keywords: [courier, parcel, last mile, express delivery, doorstep delivery, cod shipments]}
+      Warehousing: {keywords: [warehouse, warehousing, fulfilment, fulfillment, cold storage, 3pl, inventory storage]}
+      Fleet Management: {keywords: [fleet, fleet management, vehicle tracking, telematics, drivers, gps tracking]}
+      Supply Chain Management: {keywords: [supply chain, distribution network, procurement logistics, demand planning, end-to-end logistics]}
+
+# Signals that an email describes the *requested* thing rather than the sender's business. Used to keep them separate.
+request_markers: [looking for, need, require, interested in, seeking, want to, would like, request, quotation for, quote for, proposal for, planning to, help us with, can you build, can you provide]

@@ -1,0 +1,24 @@
+# What YOUR business sells. Used by the Lead Relevance "service/product fit" signal. Edit to match your company.
+company_name: "Your Company"
+services:
+  - website development
+  - web application development
+  - mobile app development
+  - custom software development
+  - erp implementation
+  - crm implementation
+  - cloud migration
+  - devops consulting
+  - data analytics dashboard
+  - ai automation
+  - machine learning
+  - cybersecurity audit
+  - it support
+  - digital marketing
+  - seo
+  - iot solutions
+  - inventory management software
+  - fleet tracking software
+  - learning management system
+  - mobile app
+  - software

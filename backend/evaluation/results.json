@@ -1,0 +1,158 @@
+{
+  "mode": "heuristic_rag (offline, no LLM)",
+  "emails": 48,
+  "industry": {
+    "labelled": 45,
+    "accuracy": 1.0,
+    "goal": 0.85,
+    "macro_f1": 1.0,
+    "per_label": {
+      "Manufacturing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 11
+      },
+      "Education": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 9
+      },
+      "IT & Software": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 7
+      },
+      "Logistics & Transportation": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 8
+      },
+      "Other / Unknown": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 10
+      }
+    },
+    "confusion_matrix": {
+      "labels": [
+        "Manufacturing",
+        "Education",
+        "IT & Software",
+        "Logistics & Transportation",
+        "Other / Unknown"
+      ],
+      "rows": [
+        [
+          11,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          9,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          7,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          8,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          10
+        ]
+      ]
+    }
+  },
+  "sub_industry": {
+    "labelled": 35,
+    "accuracy": 1.0,
+    "goal": 0.75,
+    "returned_general": 0
+  },
+  "extraction_accuracy": {
+    "company": {
+      "n": 35,
+      "accuracy": 1.0
+    },
+    "contact": {
+      "n": 32,
+      "accuracy": 1.0
+    },
+    "phone": {
+      "n": 6,
+      "accuracy": 1.0
+    }
+  },
+  "status_handling_accuracy": {
+    "n": 48,
+    "accuracy": 1.0
+  },
+  "lead_type_accuracy": {
+    "n": 41,
+    "accuracy": 0.951
+  },
+  "duplicate_detection": {
+    "n": 3,
+    "correct": 3
+  },
+  "confidence_calibration": {
+    "<0.50": {
+      "n": 0,
+      "industry_accuracy": null
+    },
+    "0.50-0.75": {
+      "n": 6,
+      "industry_accuracy": 1.0
+    },
+    ">=0.75": {
+      "n": 29,
+      "industry_accuracy": 1.0
+    }
+  },
+  "prompt_injection_case": {
+    "industry": "Logistics & Transportation",
+    "status": "Needs Review",
+    "company_trust_label": "Partially Verified"
+  },
+  "processing_ms": {
+    "mean": 4.5,
+    "p95": 6,
+    "total_seconds": 0.31
+  },
+  "failures": [
+    {
+      "id": "i06",
+      "field": "lead_type",
+      "expected": "Genuine business enquiry",
+      "got": "Sales opportunity"
+    },
+    {
+      "id": "a01",
+      "field": "lead_type",
+      "expected": "Genuine business enquiry",
+      "got": "Sales opportunity"
+    }
+  ]
+}
