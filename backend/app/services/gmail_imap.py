@@ -4,6 +4,7 @@ import email as pyemail
 import imaplib
 import json
 import logging
+import os
 import threading
 from datetime import datetime, timezone
 
@@ -22,7 +23,7 @@ _imap_lock = threading.Lock()
 
 
 def has_imap_credentials() -> bool:
-    return IMAP_TOKEN_FILE.exists()
+    return IMAP_TOKEN_FILE.exists() or bool(os.environ.get("GMAIL_APP_PASSWORD", "").strip())
 
 
 def save_imap_app_password(email_address: str, app_password: str) -> str:
@@ -60,13 +61,17 @@ def save_imap_app_password(email_address: str, app_password: str) -> str:
 
 
 def load_imap_credentials() -> tuple[str, str] | None:
-    if not IMAP_TOKEN_FILE.exists():
-        return None
-    try:
-        data = json.loads(_fernet().decrypt(IMAP_TOKEN_FILE.read_bytes()).decode("utf-8"))
-        return data["email"], data["app_password"]
-    except Exception:
-        return None
+    if IMAP_TOKEN_FILE.exists():
+        try:
+            data = json.loads(_fernet().decrypt(IMAP_TOKEN_FILE.read_bytes()).decode("utf-8"))
+            return data["email"], data["app_password"]
+        except Exception:
+            pass
+    env_pw = os.environ.get("GMAIL_APP_PASSWORD", "").replace(" ", "").strip()
+    if env_pw:
+        target = (get_settings().target_gmail_address or "rajurajuu970@gmail.com").strip().lower()
+        return target, env_pw
+    return None
 
 
 def disconnect_imap() -> None:
