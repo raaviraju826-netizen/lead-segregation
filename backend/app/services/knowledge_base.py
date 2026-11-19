@@ -2,10 +2,17 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import math
 import threading
 
-import chromadb
-from chromadb.config import Settings as ChromaSettings
+try:
+    import chromadb
+    from chromadb.config import Settings as ChromaSettings
+    HAS_CHROMA = True
+except Exception:
+    chromadb = None
+    ChromaSettings = None
+    HAS_CHROMA = False
 
 from ..config import CONFIG_DIR, get_settings
 from .embeddings import get_embedder
@@ -19,10 +26,76 @@ _examples = None
 TOP_K = 8
 
 
+class _InMemoryCollection:
+    def __init__(self, name: str):
+        self.name = name
+        self._items: dict[str, tuple[str, list[float], dict]] = {}
+
+    def count(self) -> int:
+        return len(self._items)
+
+    def add(self, ids: list[str], documents: list[str], embeddings: list[list[float]], metadatas: list[dict]):
+        self.upsert(ids=ids, documents=documents, embeddings=embeddings, metadatas=metadatas)
+
+    def upsert(self, ids: list[str], documents: list[str], embeddings: list[list[float]], metadatas: list[dict]):
+        for cid, doc, emb, meta in zip(ids, documents, embeddings, metadatas):
+            self._items[cid] = (doc, emb, meta)
+
+    def delete(self, ids: list[str]):
+        for cid in ids:
+            self._items.pop(cid, None)
+
+    def query(self, query_embeddings: list[list[float]], n_results: int = 8, include: list[str] | None = None) -> dict:
+        if not query_embeddings or not self._items:
+            return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
+        q = query_embeddings[0]
+        qn = math.sqrt(sum(x * x for x in q)) or 1.0
+        scored = []
+        for cid, (doc, emb, meta) in self._items.items():
+            en = math.sqrt(sum(x * x for x in emb)) or 1.0
+            cos = sum(a * b for a, b in zip(q, emb)) / (qn * en)
+            dist = max(0.0, 1.0 - cos)
+            scored.append((dist, cid, doc, meta))
+        scored.sort(key=lambda t: t[0])
+        top = scored[:max(1, n_results)]
+        return {
+            "ids": [[t[1] for t in top]],
+            "documents": [[t[2] for t in top]],
+            "metadatas": [[t[3] for t in top]],
+            "distances": [[t[0] for t in top]],
+        }
+
+
+class _InMemoryClient:
+    def __init__(self):
+        self._cols: dict[str, _InMemoryCollection] = {}
+
+    def list_collections(self):
+        return list(self._cols.values())
+
+    def delete_collection(self, name: str):
+        self._cols.pop(name, None)
+
+    def get_or_create_collection(self, name: str, metadata: dict | None = None):
+        if name not in self._cols:
+            self._cols[name] = _InMemoryCollection(name)
+        return self._cols[name]
+
+    def create_collection(self, name: str, metadata: dict | None = None):
+        self._cols[name] = _InMemoryCollection(name)
+        return self._cols[name]
+
+
 def _chroma():
     global _client
     if _client is None:
-        _client = chromadb.PersistentClient(path=get_settings().chroma_dir, settings=ChromaSettings(anonymized_telemetry=False))
+        if HAS_CHROMA:
+            try:
+                _client = chromadb.PersistentClient(path=get_settings().chroma_dir, settings=ChromaSettings(anonymized_telemetry=False))
+            except Exception:
+                _client = _InMemoryClient()
+        else:
+            _client = _InMemoryClient()
     return _client
 
 

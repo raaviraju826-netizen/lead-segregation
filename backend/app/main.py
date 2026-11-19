@@ -85,9 +85,29 @@ async def lifespan(app: FastAPI):
     seed_taxonomy()
     n = kb.ensure_knowledge_base(reviewed_examples())
     s = get_settings()
+    from .config import IS_VERCEL
+    if IS_VERCEL:
+        from sqlalchemy import func
+        from .models import Email
+        from .api import simulate_target_inbox_sync
+        from .demo.loader import load_demo
+        db = SessionLocal()
+        try:
+            gmail_count = db.scalar(select(func.count()).select_from(Email).where(Email.source == "gmail")) or 0
+            if gmail_count == 0:
+                simulate_target_inbox_sync(db)
+            demo_count = db.scalar(select(func.count()).select_from(Email).where(Email.source == "demo")) or 0
+            if demo_count == 0:
+                load_demo(db)
+        except Exception as e:
+            log.warning("Auto-seed check warning: %s", str(e)[:200])
+        finally:
+            db.close()
     log.info("LeadSense AI started: %d KB chunks, LLM %s, target configured: %s", n, "ON" if s.llm_enabled else "OFF (heuristic mode)", s.target_configured)
-    interval_sec = (s.sync_interval_minutes * 60) if s.sync_interval_minutes > 0 else 15
-    task = asyncio.create_task(_background_sync(interval_sec))
+    task = None
+    if not IS_VERCEL:
+        interval_sec = (s.sync_interval_minutes * 60) if s.sync_interval_minutes > 0 else 15
+        task = asyncio.create_task(_background_sync(interval_sec))
     yield
     if task:
         task.cancel()
